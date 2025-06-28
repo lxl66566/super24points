@@ -5,6 +5,7 @@ import CalculatorGrid from "./components/CalculatorGrid";
 import Dialog from "./components/Dialog";
 import { OperatorsFunc, type Difficulty, type Operators } from "./schemas";
 import { calculate } from "./utils/solver";
+import { SolidMarkdown } from "solid-markdown";
 
 const EPSILON = 1e-6; // For floating-point comparisons
 
@@ -100,7 +101,7 @@ const App: Component = () => {
       // Win condition check is now handled by the top-level createEffect
       return;
     } else {
-      window.alert("运算错误！"); // Handle errors like division by zero
+      window.alert("Error in calculation!"); // Handle errors like division by zero
       handleClear();
       return;
     }
@@ -117,7 +118,7 @@ const App: Component = () => {
 
   const handleRecallRegister = () => {
     if (!registerValue()) {
-      window.alert("请先存储到寄存器！");
+      window.alert("Please store to register first!");
       return;
     }
     handleNumberClick(registerValue()!, 4); // 4 代表寄存器
@@ -155,7 +156,9 @@ const App: Component = () => {
     } while (solutions.length === 0 && attempts < MAX_ATTEMPTS);
 
     if (solutions.length === 0) {
-      console.warn("未能找到有解的数字组合，请尝试调整难度或重新开始。");
+      console.warn(
+        "No solution found, please try to adjust difficulty or restart.",
+      );
       // Fallback to a default solvable set or alert the user
       newNumbers = [1, 2, 3, 4]; // A known solvable set
     }
@@ -221,25 +224,31 @@ const App: Component = () => {
         onClose={() => setIsHelpDialogOpen(false)}
         title="帮助"
       >
-        <p>
-          这是一个24点游戏。你需要使用给定的四个数字和运算符，通过加减乘除以及其他可能的运算，最终得到24。
-        </p>
-        <p class="mt-2">支持的运算符包括：+</p>
-        <p>-</p>
-        <p>*</p>
-        <p>/</p>
-        <p>^ (幂运算)</p>
-        <p>& (按位与)</p>
-        <p>| (按位或)</p>
+        <SolidMarkdown
+          children={`You should use all 4 numbers to calculate out 24.
+
+- easy: numbers from 1 to 10
+- normal: numbers from -10 to 10 (except 0)
+- hard: '^' means power and '//' means divide and fix to 0
+- lunatic: '^','&','|' means xor,and,or.
+
+Enjoy yourself!
+
+需要用给定数字与符号算出 24 点
+
+- easy: 数字从 1 到 10
+- normal: 数字扩展到 -10 到 10 (0 除外)
+- hard: 新增 指数运算^ 整除运算// (向 0 取整)
+- lunatic: 新增 按位异或^ 按位与& 按位或|`}
+        />
       </Dialog>
 
-      {/* 作弊对话框 */}
+      {/* Cheat 对话框 */}
       <Dialog
         isOpen={isCheatDialogOpen()}
         onClose={() => setIsCheatDialogOpen(false)}
-        title="作弊 (答案)"
+        title="Cheat"
       >
-        <p>当前问题的答案：</p>
         {cheatSolutions().length > 0 ? (
           <ul class="mt-2 list-disc pl-5 font-mono text-lg">
             {cheatSolutions().map((solution) => (
@@ -247,7 +256,7 @@ const App: Component = () => {
             ))}
           </ul>
         ) : (
-          <p class="mt-2 text-red-400">无解</p>
+          <p class="mt-2 text-red-400">No solution</p>
         )}
       </Dialog>
 
@@ -255,11 +264,9 @@ const App: Component = () => {
       <Dialog
         isOpen={isWinDialogOpen()}
         onClose={() => setIsWinDialogOpen(false)}
-        title="恭喜！"
+        title="Congratulations!"
       >
-        <p class="text-center text-xl font-bold text-green-400">
-          你成功算出了 24 点！
-        </p>
+        <p class="text-center text-xl font-bold text-green-400">You win!</p>
       </Dialog>
     </div>
   );
