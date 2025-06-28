@@ -14,7 +14,7 @@ const App: Component = () => {
   // 状态管理
   const [currentNumber, setCurrentNumber] = createSignal<number | null>(null); // 当前显示的值
   const [registerValue, setRegisterValue] = createSignal<number | null>(null); // 寄存器中的值
-  const [currentNumbers, setCurrentNumbers] = createSignal([8, 8, 3, 8]); // 初始数字，没什么用，会被刷掉
+  const [currentNumbers, setCurrentNumbers] = createSignal([8, 8, 3, 8]); // 初始数字，会被刷掉，没啥意义
   const [numbersEnabled, setNumbersEnabled] = createSignal<boolean[]>(
     currentNumbers().map(() => true),
   );
@@ -31,6 +31,13 @@ const App: Component = () => {
   const [isWinDialogOpen, setIsWinDialogOpen] = createSignal(false); // New state for win dialog
   const [cheatSolutions, setCheatSolutions] = createSignal<string[]>([]); // New state for cheat solutions
 
+  let currentSolution: string | null = null;
+  let registerSolution: string | null = null;
+
+  onMount(() => {
+    handleNewGame();
+  });
+
   // 重置状态
   const handleClear = () => {
     setCurrentNumber(null);
@@ -40,6 +47,8 @@ const App: Component = () => {
     setIsHelpDialogOpen(false);
     setIsCheatDialogOpen(false);
     setIsWinDialogOpen(false); // Reset win dialog
+    currentSolution = null;
+    registerSolution = null;
   };
 
   // 使用数字（将其变为不可用）
@@ -78,15 +87,20 @@ const App: Component = () => {
     checkWinCondition();
   }, [currentNumber, numbersEnabled, registerValue]);
 
-  onMount(() => {
-    handleNewGame();
-  });
-
   // 数字按钮点击回调
   const handleNumberClick = (num: number, index: number) => {
+    // console.log(currentNumber(), num);
     if (currentNumber() === null) {
       // If no current number, set it
       setCurrentNumber(num);
+      // 更新或移动解
+      if (index !== 4) {
+        currentSolution = num.toString();
+      } else {
+        // 从寄存器里移出
+        currentSolution = registerSolution;
+        registerSolution = null;
+      }
       useNumber(index);
       return;
     }
@@ -101,6 +115,12 @@ const App: Component = () => {
     const result = OperatorsFunc[op](num1, num2);
 
     if (result !== null) {
+      if (index !== 4) {
+        currentSolution = `(${currentSolution} ${op} ${num2})`;
+      } else {
+        currentSolution = `(${currentSolution} ${op} ${registerSolution})`;
+        registerSolution = null;
+      }
       setCurrentNumber(result);
       setCurrentOperator(null); // Reset operator after operation
       useNumber(index);
@@ -120,6 +140,8 @@ const App: Component = () => {
   const handleStoreRegister = () => {
     setRegisterValue(currentNumber());
     setCurrentNumber(null);
+    registerSolution = currentSolution;
+    currentSolution = null;
   };
 
   const handleRecallRegister = () => {
@@ -281,7 +303,10 @@ Enjoy yourself!
         onClose={() => setIsWinDialogOpen(false)}
         title="Congratulations!"
       >
-        <p class="text-center text-xl font-bold text-green-400">You win!</p>
+        <p class="text-center text-xl font-bold text-green-400">
+          You win! Your solution is: <br />
+          {currentSolution!.slice(1, -1) /* Remove parentheses */}
+        </p>
       </Dialog>
     </div>
   );
