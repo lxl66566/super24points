@@ -20,12 +20,12 @@ const Register: Component<RegisterProps> = (props) => {
         class="btn-square"
         disabled={!props.registerValue() && !props.currentDisplay()}
       >
-        {props.registerValue() || (props.currentDisplay() ? "<-" : "")}
+        {props.registerValue() ?? (props.currentDisplay() ? "<-" : "")}
       </Button>
       {/* 当前数值显示区域 */}
       <div class="flex h-12 min-w-0 flex-grow items-center justify-center rounded-lg bg-gray-700 px-4 text-xl text-white">
         <div class="overflow-hidden text-ellipsis whitespace-nowrap rounded-lg p-4 text-right text-4xl text-white">
-          {props.currentDisplay() || ""}
+          {props.currentDisplay() ?? ""}
         </div>
       </div>
       {/* 清零按钮 */}

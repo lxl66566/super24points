@@ -1,4 +1,4 @@
-import { type Component, createSignal, createEffect } from "solid-js";
+import { type Component, createSignal, createEffect, onMount } from "solid-js";
 import Navbar from "./components/Navbar";
 import Register from "./components/Register";
 import CalculatorGrid from "./components/CalculatorGrid";
@@ -21,8 +21,9 @@ const App: Component = () => {
   const [currentOperator, setCurrentOperator] = createSignal<Operators | null>(
     null,
   ); // 当前选中的运算符
-  const [currentDifficulty, setCurrentDifficulty] =
-    createSignal<Difficulty>("easy"); // 当前难度
+  const [currentDifficulty, setCurrentDifficulty] = createSignal<Difficulty>(
+    (localStorage.getItem("difficulty") as Difficulty) || "easy",
+  ); // 当前难度
 
   // 对话框状态
   const [isHelpDialogOpen, setIsHelpDialogOpen] = createSignal(false);
@@ -74,6 +75,10 @@ const App: Component = () => {
   // 在 currentNumber, numbersEnabled, registerValue 变化时检查胜利条件
   createEffect(() => {
     checkWinCondition();
+  }, [currentNumber, numbersEnabled, registerValue]);
+
+  onMount(() => {
+    handleNewGame();
   });
 
   // 数字按钮点击回调
@@ -131,25 +136,32 @@ const App: Component = () => {
     let attempts = 0;
     const MAX_ATTEMPTS = 1000; // Prevent infinite loops
 
+    // Helper function to generate a cryptographically secure random number between 0 (inclusive) and 1 (exclusive)
+    const getRandomCrypto = (): number => {
+      const randomBytes = new Uint32Array(1);
+      window.crypto.getRandomValues(randomBytes);
+      return randomBytes[0] / (0xffffffff + 1); // Divide by 2^32
+    };
+
     do {
       attempts++;
       if (currentDifficulty() === "normal") {
         // For normal difficulty: [-10, -1] U [1, 10]
         newNumbers = Array.from({ length: 4 }, () => {
-          const rand = Math.random();
+          const rand = getRandomCrypto(); // Use crypto random
           if (rand < 0.5) {
             // 50% chance for negative numbers [-10, -1]
-            return Math.floor(Math.random() * 10) - 10; // -10 to -1
+            return Math.floor(getRandomCrypto() * 10) - 10; // -10 to -1
           } else {
             // 50% chance for positive numbers [1, 10]
-            return Math.floor(Math.random() * 10) + 1; // 1 to 10
+            return Math.floor(getRandomCrypto() * 10) + 1; // 1 to 10
           }
         });
       } else {
         // For easy, hard, lunatic: [1, 10]
         newNumbers = Array.from(
           { length: 4 },
-          () => Math.floor(Math.random() * 10) + 1,
+          () => Math.floor(getRandomCrypto() * 10) + 1, // Use crypto random
         );
       }
       solutions = calculate(newNumbers, currentDifficulty());
@@ -175,6 +187,7 @@ const App: Component = () => {
     difficulty: "easy" | "normal" | "hard" | "lunatic",
   ) => {
     setCurrentDifficulty(difficulty);
+    localStorage.setItem("difficulty", difficulty); // 将难度保存到 localStorage
     handleNewGame(); // 切换难度后开始新游戏
   };
 
