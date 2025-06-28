@@ -242,7 +242,7 @@ const App: Component = () => {
 
 - easy: numbers from 1 to 10
 - normal: numbers from -10 to 10 (except 0)
-- hard: '^' means power and '//' means divide and fix to 0
+- hard: '\\*\\*' means power and '//' means divide and fix to 0
 - lunatic: '^','&','|' means xor,and,or.
 
 Enjoy yourself!
@@ -251,7 +251,7 @@ Enjoy yourself!
 
 - easy: 数字从 1 到 10
 - normal: 数字扩展到 -10 到 10 (0 除外)
-- hard: 新增 指数运算^ 整除运算// (向 0 取整)
+- hard: 新增 指数运算\\*\\* 整除运算// (向 0 取整)
 - lunatic: 新增 按位异或^ 按位与& 按位或|`}
         />
       </Dialog>

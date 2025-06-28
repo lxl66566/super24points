@@ -1,5 +1,5 @@
 type Difficulty = "easy" | "normal" | "hard" | "lunatic";
-type Operators = "+" | "-" | "*" | "/" | "^" | "//" | "&" | "|";
+type Operators = "+" | "-" | "*" | "**" | "/" | "^" | "//" | "&" | "|";
 
 const OperatorsFunc: {
   [key in Operators]: (num1: number, num2: number) => number;
@@ -8,8 +8,9 @@ const OperatorsFunc: {
   "-": (num1: number, num2: number): number => num1 - num2,
   "*": (num1: number, num2: number): number => num1 * num2,
   "/": (num1: number, num2: number): number => num1 / num2,
-  "^": (num1: number, num2: number): number => num1 ** num2,
+  "**": (num1: number, num2: number): number => num1 ** num2,
   "//": (num1: number, num2: number): number => Math.trunc(num1 / num2),
+  "^": (num1: number, num2: number): number => num1 ^ num2,
   "&": (num1: number, num2: number): number => num1 & num2,
   "|": (num1: number, num2: number): number => num1 | num2,
 };
@@ -20,9 +21,9 @@ const allowedOperators = (difficulty: Difficulty): Operators[] => {
     case "normal":
       return ["+", "-", "*", "/"];
     case "hard":
-      return ["+", "-", "*", "/", "^", "//"];
+      return ["+", "-", "*", "/", "**", "//"];
     case "lunatic":
-      return ["+", "-", "*", "/", "&", "|"];
+      return ["+", "-", "*", "/", "^", "&", "|"];
   }
 };
 

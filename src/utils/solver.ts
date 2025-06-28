@@ -74,10 +74,10 @@ export function calculate(
 
           // 对于非交换律运算符（- 和 /），需要尝试 b op a
           // + 和 * 是交换律的，a+b=b+a，所以不需要交换计算来避免重复
-          if (op === "-" || op === "/") {
+          if (op === "-" || op === "/" || op === "**") {
             // 剪枝：避免除以零
             if (op === "/" && Math.abs(item1.value) < EPSILON) {
-              // continue;
+              continue;
             } else {
               const newValue = opFunc(item2.value, item1.value);
               if (isFinite(newValue)) {
