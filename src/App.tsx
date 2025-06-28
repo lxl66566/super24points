@@ -14,7 +14,7 @@ const App: Component = () => {
   // 状态管理
   const [currentNumber, setCurrentNumber] = createSignal<number | null>(null); // 当前显示的值
   const [registerValue, setRegisterValue] = createSignal<number | null>(null); // 寄存器中的值
-  const [currentNumbers, setCurrentNumbers] = createSignal([2, 7, 3, 6]); // 初始数字
+  const [currentNumbers, setCurrentNumbers] = createSignal([8, 8, 3, 8]); // 初始数字，没什么用，会被刷掉
   const [numbersEnabled, setNumbersEnabled] = createSignal<boolean[]>(
     currentNumbers().map(() => true),
   );
@@ -56,6 +56,7 @@ const App: Component = () => {
     else {
       setRegisterValue(null);
     }
+    // console.log(currentNumber());
   };
 
   // 检查胜利条件
@@ -122,7 +123,8 @@ const App: Component = () => {
   };
 
   const handleRecallRegister = () => {
-    if (!registerValue()) {
+    if (registerValue() === null) {
+      // should not happen
       window.alert("Please store to register first!");
       return;
     }

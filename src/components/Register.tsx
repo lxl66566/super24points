@@ -16,11 +16,15 @@ const Register: Component<RegisterProps> = (props) => {
     <div class="flex items-center space-x-2 rounded-lg bg-gray-800 p-2">
       {/* 召回按钮 (寄存器) */}
       <Button
-        onClick={props.registerValue() ? props.onRecall : props.onStore}
+        onClick={
+          props.registerValue() !== null ? props.onRecall : props.onStore
+        }
         class="btn-square"
-        disabled={!props.registerValue() && !props.currentDisplay()}
+        disabled={
+          props.registerValue() === null && props.currentDisplay() === null
+        }
       >
-        {props.registerValue() ?? (props.currentDisplay() ? "<-" : "")}
+        {props.registerValue() ?? (props.currentDisplay() !== null ? "<-" : "")}
       </Button>
       {/* 当前数值显示区域 */}
       <div class="flex h-12 min-w-0 flex-grow items-center justify-center rounded-lg bg-gray-700 px-4 text-xl text-white">
