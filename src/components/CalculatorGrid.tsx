@@ -1,6 +1,6 @@
 import { type Component, For, type Accessor } from "solid-js";
 import Button from "./Button";
-import { allowedOperators, type Operators } from "../schemas";
+import { allowedOperators, type Operators, type Difficulty } from "../schemas";
 
 // 定义计算器网格组件的属性接口
 interface CalculatorGridProps {
@@ -10,12 +10,11 @@ interface CalculatorGridProps {
   onNumberClick: (num: number, index: number) => void; // 数字按钮点击回调
   onOperatorClick: (op: Operators) => void; // 运算符按钮点击回调
   currentOperator: string | null; // 当前选中的运算符
+  currentDifficulty: Accessor<Difficulty>; // Add currentDifficulty prop
 }
 
 // 计算器网格组件
 const CalculatorGrid: Component<CalculatorGridProps> = (props) => {
-  // TODO: 运算符列表
-  const operators = allowedOperators("lunatic");
   return (
     <div class="grid grid-cols-4 gap-4 p-4">
       {/* 数字按钮 */}
@@ -33,7 +32,7 @@ const CalculatorGrid: Component<CalculatorGridProps> = (props) => {
         )}
       </For>
       {/* 运算符按钮 */}
-      <For each={operators}>
+      <For each={allowedOperators(props.currentDifficulty())}>
         {(op) => (
           <Button
             variant="operator"

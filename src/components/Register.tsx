@@ -29,7 +29,7 @@ const Register: Component<RegisterProps> = (props) => {
         </div>
       </div>
       {/* 清零按钮 */}
-      <Button onClick={props.onClear} class="h-12 w-16 text-lg">
+      <Button onClick={props.onClear} class="h-12 w-20 p-0 text-lg">
         清零
       </Button>
     </div>

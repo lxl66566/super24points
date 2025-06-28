@@ -1,9 +1,12 @@
-import { type Component, createSignal } from "solid-js";
+import { type Component, createSignal, createEffect } from "solid-js";
 import Navbar from "./components/Navbar";
 import Register from "./components/Register";
 import CalculatorGrid from "./components/CalculatorGrid";
 import Dialog from "./components/Dialog";
 import { OperatorsFunc, type Difficulty, type Operators } from "./schemas";
+import { calculate } from "./utils/solver";
+
+const EPSILON = 1e-6; // For floating-point comparisons
 
 // App 组件
 const App: Component = () => {
@@ -18,11 +21,13 @@ const App: Component = () => {
     null,
   ); // 当前选中的运算符
   const [currentDifficulty, setCurrentDifficulty] =
-    createSignal<Difficulty>("lunatic"); // 当前难度
+    createSignal<Difficulty>("easy"); // 当前难度
 
   // 对话框状态
   const [isHelpDialogOpen, setIsHelpDialogOpen] = createSignal(false);
   const [isCheatDialogOpen, setIsCheatDialogOpen] = createSignal(false);
+  const [isWinDialogOpen, setIsWinDialogOpen] = createSignal(false); // New state for win dialog
+  const [cheatSolutions, setCheatSolutions] = createSignal<string[]>([]); // New state for cheat solutions
 
   // 重置状态
   const handleClear = () => {
@@ -32,47 +37,77 @@ const App: Component = () => {
     setCurrentOperator(null);
     setIsHelpDialogOpen(false);
     setIsCheatDialogOpen(false);
+    setIsWinDialogOpen(false); // Reset win dialog
   };
 
   // 使用数字（将其变为不可用）
   const useNumber = (index: number) => {
-    setNumbersEnabled((prev) => {
-      const newNumbersEnabled = prev.slice();
-      newNumbersEnabled[index] = false;
-      return newNumbersEnabled;
-    });
+    // 对于 0-3 是正常数字
+    if (index < 4) {
+      setNumbersEnabled((prev) => {
+        const newNumbersEnabled = prev.slice();
+        newNumbersEnabled[index] = false;
+        return newNumbersEnabled;
+      });
+    }
+    // 4 则是寄存器
+    else {
+      setRegisterValue(null);
+    }
   };
 
-  // 数字按钮点击回调。返回 true 代表数字被使用，返回 false 代表数字被忽略
+  // 检查胜利条件
+  const checkWinCondition = () => {
+    if (currentNumber() === null) {
+      return;
+    }
+    const allNumbersUsed = numbersEnabled().every((enabled) => !enabled);
+    const isRegisterEmpty = registerValue() === null;
+    const isTargetReached = Math.abs(currentNumber()! - 24) < EPSILON;
+
+    if (allNumbersUsed && isRegisterEmpty && isTargetReached) {
+      setIsWinDialogOpen(true);
+    }
+  };
+
+  // 在 currentNumber, numbersEnabled, registerValue 变化时检查胜利条件
+  createEffect(() => {
+    checkWinCondition();
+  });
+
+  // 数字按钮点击回调
   const handleNumberClick = (num: number, index: number) => {
-    if (!currentNumber()) {
-      // 如果没有当前数字，则设置当前数字
+    if (currentNumber() === null) {
+      // If no current number, set it
       setCurrentNumber(num);
       useNumber(index);
       return;
     }
     if (currentOperator() === null) {
-      return; // 如果没有选中运算符，则忽略此数字
+      // If no operator selected, ignore
+      return;
     }
-    // 如果有选中运算符，进行运算
+    // If operator is selected, perform operation
     const num1 = currentNumber()!;
+    const op = currentOperator()!;
     const num2 = num;
-    const result = OperatorsFunc[currentOperator()!](num1, num2);
+    const result = OperatorsFunc[op](num1, num2);
 
     if (result !== null) {
       setCurrentNumber(result);
-      setCurrentOperator(null); // 运算后重置运算符
+      setCurrentOperator(null); // Reset operator after operation
       useNumber(index);
+      // Win condition check is now handled by the top-level createEffect
       return;
     } else {
-      window.alert("运算错误！"); // 处理错误，如除零
+      window.alert("运算错误！"); // Handle errors like division by zero
       handleClear();
       return;
     }
   };
 
   const handleOperatorClick = (op: Operators) => {
-    setCurrentOperator(op); // 设置当前运算符
+    setCurrentOperator(op); // Set current operator
   };
 
   const handleStoreRegister = () => {
@@ -85,16 +120,46 @@ const App: Component = () => {
       window.alert("请先存储到寄存器！");
       return;
     }
-    setCurrentNumber(registerValue());
-    setRegisterValue(null);
+    handleNumberClick(registerValue()!, 4); // 4 代表寄存器
   };
 
   // 导航栏功能
   const handleNewGame = () => {
-    const newNumbers = Array.from(
-      { length: 4 },
-      () => Math.floor(Math.random() * 10) + 1,
-    ); // 生成 1-10 的随机数
+    let newNumbers: number[] = [];
+    let solutions: string[] = [];
+    let attempts = 0;
+    const MAX_ATTEMPTS = 1000; // Prevent infinite loops
+
+    do {
+      attempts++;
+      if (currentDifficulty() === "normal") {
+        // For normal difficulty: [-10, -1] U [1, 10]
+        newNumbers = Array.from({ length: 4 }, () => {
+          const rand = Math.random();
+          if (rand < 0.5) {
+            // 50% chance for negative numbers [-10, -1]
+            return Math.floor(Math.random() * 10) - 10; // -10 to -1
+          } else {
+            // 50% chance for positive numbers [1, 10]
+            return Math.floor(Math.random() * 10) + 1; // 1 to 10
+          }
+        });
+      } else {
+        // For easy, hard, lunatic: [1, 10]
+        newNumbers = Array.from(
+          { length: 4 },
+          () => Math.floor(Math.random() * 10) + 1,
+        );
+      }
+      solutions = calculate(newNumbers, currentDifficulty());
+    } while (solutions.length === 0 && attempts < MAX_ATTEMPTS);
+
+    if (solutions.length === 0) {
+      console.warn("未能找到有解的数字组合，请尝试调整难度或重新开始。");
+      // Fallback to a default solvable set or alert the user
+      newNumbers = [1, 2, 3, 4]; // A known solvable set
+    }
+
     setCurrentNumbers(newNumbers);
     handleClear();
   };
@@ -107,11 +172,11 @@ const App: Component = () => {
     difficulty: "easy" | "normal" | "hard" | "lunatic",
   ) => {
     setCurrentDifficulty(difficulty);
-    // 实际逻辑会根据难度调整游戏，这里只是更新状态
     handleNewGame(); // 切换难度后开始新游戏
   };
 
   const handleCheat = () => {
+    setCheatSolutions(calculate(currentNumbers(), currentDifficulty()));
     setIsCheatDialogOpen(true);
   };
 
@@ -145,6 +210,7 @@ const App: Component = () => {
             onNumberClick={handleNumberClick}
             onOperatorClick={handleOperatorClick}
             currentOperator={currentOperator()}
+            currentDifficulty={currentDifficulty} // Pass difficulty signal directly
           />
         </div>
       </div>
@@ -174,8 +240,26 @@ const App: Component = () => {
         title="作弊 (答案)"
       >
         <p>当前问题的答案：</p>
-        <p class="mt-2 font-mono text-lg">例如：(7 - 3) * (6 + 2) = 24</p>
-        <p class="mt-4 text-red-400">（此处应动态显示实际的答案逻辑）</p>
+        {cheatSolutions().length > 0 ? (
+          <ul class="mt-2 list-disc pl-5 font-mono text-lg">
+            {cheatSolutions().map((solution) => (
+              <li>{solution}</li>
+            ))}
+          </ul>
+        ) : (
+          <p class="mt-2 text-red-400">无解</p>
+        )}
+      </Dialog>
+
+      {/* 胜利对话框 */}
+      <Dialog
+        isOpen={isWinDialogOpen()}
+        onClose={() => setIsWinDialogOpen(false)}
+        title="恭喜！"
+      >
+        <p class="text-center text-xl font-bold text-green-400">
+          你成功算出了 24 点！
+        </p>
       </Dialog>
     </div>
   );
