@@ -16,7 +16,7 @@ interface CalculatorGridProps {
 // 计算器网格组件
 const CalculatorGrid: Component<CalculatorGridProps> = (props) => {
   return (
-    <div class="grid grid-cols-4 gap-4 p-4">
+    <div class="grid grid-cols-4 place-items-center gap-4 p-4">
       {/* 数字按钮 */}
       <For each={props.numbers}>
         {(num, i) => (

@@ -23,13 +23,13 @@ const Register: Component<RegisterProps> = (props) => {
         {props.registerValue() || (props.currentDisplay() ? "<-" : "")}
       </Button>
       {/* 当前数值显示区域 */}
-      <div class="flex h-12 flex-grow items-center justify-center rounded-lg bg-gray-700 px-4 text-xl text-white">
-        <div class="overflow-hidden whitespace-nowrap rounded-lg p-4 text-right text-4xl text-white">
+      <div class="flex h-12 min-w-0 flex-grow items-center justify-center rounded-lg bg-gray-700 px-4 text-xl text-white">
+        <div class="overflow-hidden text-ellipsis whitespace-nowrap rounded-lg p-4 text-right text-4xl text-white">
           {props.currentDisplay() || ""}
         </div>
       </div>
       {/* 清零按钮 */}
-      <Button onClick={props.onClear} class="h-12 w-20 p-0 text-lg">
+      <Button onClick={props.onClear} class="h-12 w-20 min-w-10 !p-0 text-lg">
         清零
       </Button>
     </div>

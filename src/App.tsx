@@ -181,8 +181,8 @@ const App: Component = () => {
   };
 
   return (
-    <div class="flex min-h-screen flex-col items-center justify-center bg-gray-950 font-sans">
-      <div class="mx-auto w-full max-w-xl rounded-xl bg-gray-800 p-6 shadow-2xl">
+    <div class="mx-auto flex min-h-screen w-screen flex-col items-center justify-center bg-gray-950 font-sans">
+      <div class="max-w-screen mx-auto max-w-full rounded-xl bg-gray-800 p-6 shadow-2xl">
         {/* 导航栏 */}
         <Navbar
           onNewGame={handleNewGame}
@@ -193,7 +193,7 @@ const App: Component = () => {
         />
 
         {/* 主界面内容 */}
-        <div class="mt-6 space-y-4">
+        <div class="mt-6 w-full space-y-4">
           {/* 寄存器区域 */}
           <Register
             registerValue={registerValue}
