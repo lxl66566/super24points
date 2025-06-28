@@ -3,58 +3,100 @@ import Navbar from "./components/Navbar";
 import Register from "./components/Register";
 import CalculatorGrid from "./components/CalculatorGrid";
 import Dialog from "./components/Dialog";
+import { OperatorsFunc, type Difficulty, type Operators } from "./schemas";
 
 // App 组件
 const App: Component = () => {
   // 状态管理
-  const [currentDisplay, setCurrentDisplay] = createSignal("0"); // 当前显示的值
-  const [registerValue, setRegisterValue] = createSignal(""); // 寄存器中的值
+  const [currentNumber, setCurrentNumber] = createSignal<number | null>(null); // 当前显示的值
+  const [registerValue, setRegisterValue] = createSignal<number | null>(null); // 寄存器中的值
   const [currentNumbers, setCurrentNumbers] = createSignal([2, 7, 3, 6]); // 初始数字
-  const [currentDifficulty, setCurrentDifficulty] = createSignal<
-    "easy" | "normal" | "hard" | "lunatic"
-  >("lunatic"); // 当前难度
+  const [numbersEnabled, setNumbersEnabled] = createSignal<boolean[]>(
+    currentNumbers().map(() => true),
+  );
+  const [currentOperator, setCurrentOperator] = createSignal<Operators | null>(
+    null,
+  ); // 当前选中的运算符
+  const [currentDifficulty, setCurrentDifficulty] =
+    createSignal<Difficulty>("lunatic"); // 当前难度
 
   // 对话框状态
   const [isHelpDialogOpen, setIsHelpDialogOpen] = createSignal(false);
   const [isCheatDialogOpen, setIsCheatDialogOpen] = createSignal(false);
 
-  // 模拟操作逻辑 (不实现具体计算逻辑)
-  const handleNumberClick = (num: number) => {
-    setCurrentDisplay((prev) =>
-      prev === "0" ? num.toString() : prev + num.toString(),
-    );
-  };
-
-  const handleOperatorClick = (op: string) => {
-    setCurrentDisplay((prev) => prev + op);
-  };
-
+  // 重置状态
   const handleClear = () => {
-    setCurrentDisplay("0");
+    setCurrentNumber(null);
+    setNumbersEnabled(currentNumbers().map(() => true));
+    setRegisterValue(null);
+    setCurrentOperator(null);
+    setIsHelpDialogOpen(false);
+    setIsCheatDialogOpen(false);
+  };
+
+  // 使用数字（将其变为不可用）
+  const useNumber = (index: number) => {
+    setNumbersEnabled((prev) => {
+      const newNumbersEnabled = prev.slice();
+      newNumbersEnabled[index] = false;
+      return newNumbersEnabled;
+    });
+  };
+
+  // 数字按钮点击回调。返回 true 代表数字被使用，返回 false 代表数字被忽略
+  const handleNumberClick = (num: number, index: number) => {
+    if (!currentNumber()) {
+      // 如果没有当前数字，则设置当前数字
+      setCurrentNumber(num);
+      useNumber(index);
+      return;
+    }
+    if (currentOperator() === null) {
+      return; // 如果没有选中运算符，则忽略此数字
+    }
+    // 如果有选中运算符，进行运算
+    const num1 = currentNumber()!;
+    const num2 = num;
+    const result = OperatorsFunc[currentOperator()!](num1, num2);
+
+    if (result !== null) {
+      setCurrentNumber(result);
+      setCurrentOperator(null); // 运算后重置运算符
+      useNumber(index);
+      return;
+    } else {
+      window.alert("运算错误！"); // 处理错误，如除零
+      handleClear();
+      return;
+    }
+  };
+
+  const handleOperatorClick = (op: Operators) => {
+    setCurrentOperator(op); // 设置当前运算符
   };
 
   const handleStoreRegister = () => {
-    setRegisterValue(currentDisplay());
+    setRegisterValue(currentNumber());
+    setCurrentNumber(null);
   };
 
   const handleRecallRegister = () => {
-    if (registerValue()) {
-      setCurrentDisplay(registerValue());
+    if (!registerValue()) {
+      window.alert("请先存储到寄存器！");
+      return;
     }
+    setCurrentNumber(registerValue());
+    setRegisterValue(null);
   };
 
   // 导航栏功能
   const handleNewGame = () => {
-    alert("开始新游戏！");
-    // 实际逻辑会是生成新数字等
-    setCurrentDisplay("0");
-    setRegisterValue("");
-    setCurrentNumbers([
-      Math.floor(Math.random() * 9) + 1,
-      Math.floor(Math.random() * 9) + 1,
-      Math.floor(Math.random() * 9) + 1,
-      Math.floor(Math.random() * 9) + 1,
-    ]);
+    const newNumbers = Array.from(
+      { length: 4 },
+      () => Math.floor(Math.random() * 10) + 1,
+    ); // 生成 1-10 的随机数
+    setCurrentNumbers(newNumbers);
+    handleClear();
   };
 
   const handleHelp = () => {
@@ -65,8 +107,8 @@ const App: Component = () => {
     difficulty: "easy" | "normal" | "hard" | "lunatic",
   ) => {
     setCurrentDifficulty(difficulty);
-    alert(`难度设置为：${difficulty}`);
-    // 实际逻辑会根据难度调整游戏
+    // 实际逻辑会根据难度调整游戏，这里只是更新状态
+    handleNewGame(); // 切换难度后开始新游戏
   };
 
   const handleCheat = () => {
@@ -89,7 +131,8 @@ const App: Component = () => {
         <div class="mt-6 space-y-4">
           {/* 寄存器区域 */}
           <Register
-            registerValue={registerValue()}
+            registerValue={registerValue}
+            currentDisplay={currentNumber}
             onStore={handleStoreRegister}
             onRecall={handleRecallRegister}
             onClear={handleClear}
@@ -98,8 +141,10 @@ const App: Component = () => {
           {/* 计算器按键网格 */}
           <CalculatorGrid
             numbers={currentNumbers()}
+            numbersEnabled={numbersEnabled}
             onNumberClick={handleNumberClick}
             onOperatorClick={handleOperatorClick}
+            currentOperator={currentOperator()}
           />
         </div>
       </div>

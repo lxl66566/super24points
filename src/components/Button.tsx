@@ -1,34 +1,41 @@
-import type { Component, JSX } from "solid-js";
+import { type Component, type JSX, splitProps } from "solid-js";
 
-// 定义按钮组件的属性接口
 interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
-  children?: JSX.Element; // 按钮内容
-  variant?: "primary" | "secondary" | "square" | "operator"; // 按钮变体，用于不同样式
+  children?: JSX.Element;
+  variant?: "primary" | "secondary" | "square" | "operator";
+  class?: string;
 }
 
-// 按钮组件
 const Button: Component<ButtonProps> = (props) => {
-  const { children, variant, class: customClass, ...rest } = props;
+  const [local, rest] = splitProps(props, ["children", "variant", "class"]);
 
-  // 根据 variant 应用不同的 Tailwind CSS 类
   const getVariantClasses = () => {
-    switch (variant) {
-      case "square":
-        return "btn btn-square"; // 数字按钮的样式
-      case "operator":
-        return "btn btn-operator"; // 运算符按钮的样式
+    const baseClasses =
+      local.variant === "square"
+        ? "btn btn-square"
+        : local.variant === "operator"
+          ? "btn btn-operator"
+          : "btn";
+
+    // 如果是禁用状态，返回基础类（不带hover）
+    if (rest.disabled) {
+      return `${baseClasses} !hover:bg-gray-700`;
+    }
+
+    // 非禁用状态，添加hover类
+    switch (local.variant) {
       case "primary":
-        return "btn bg-blue-600 hover:bg-blue-700"; // 主要操作按钮
+        return `${baseClasses} bg-blue-600 hover:bg-blue-700`;
       case "secondary":
-        return "btn bg-gray-500 hover:bg-gray-600"; // 次要操作按钮
+        return `${baseClasses} bg-gray-500 hover:bg-gray-600`;
       default:
-        return "btn"; // 默认按钮样式
+        return baseClasses;
     }
   };
 
   return (
-    <button class={`${getVariantClasses()} ${customClass || ""}`} {...rest}>
-      {children}
+    <button class={`${getVariantClasses()} ${local.class || ""}`} {...rest}>
+      {local.children}
     </button>
   );
 };
