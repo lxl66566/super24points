@@ -19,7 +19,7 @@ const Register: Component<RegisterProps> = (props) => {
         onClick={
           props.registerValue() !== null ? props.onRecall : props.onStore
         }
-        class="btn-square"
+        variant="square"
         disabled={
           props.registerValue() === null && props.currentDisplay() === null
         }
